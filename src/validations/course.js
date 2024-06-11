@@ -9,16 +9,30 @@ const courseCategories = [
     "Data Science"
 ];
 
-const codeSchema = Joi.string().trim().alphanum().min(4).max(10).label('code');
-const nameSchema = Joi.string().trim().min(2).label('name');
-const descriptionSchema = Joi.string().trim().min(10).label('description');
-const categorySchema = Joi.string().trim().valid(...courseCategories).label('category');
-//const materials = Joi.string()
-const instructorSchema = Joi.number().integer().label('instructor');
-const durationSchema = Joi.number().integer().min(1).label('duration');
-const levelSchema = Joi.string().trim().valid("Beginner", "Intermediate", "Advanced").label('level');
-const sectionsSchema = Joi.number().integer().min(1).label('sections');
-const statusSchema = Joi.string().trim().valid("pending", "approved").label('status');
+// Custom validation messages
+const customMessages = {
+    'string.base': '{#label} should be a type of text',
+    'string.empty': '{#label} cannot be an empty field',
+    'string.min': '{#label} should have a minimum length of {#limit}',
+    'string.max': '{#label} should have a maximum length of {#limit}',
+    'any.required': '{#label} is a required field',
+    'string.alphanum': '{#label} should only contain alphanumeric characters',
+    'string.pattern.base': '{#label} must start with a letter',
+    'number.base': '{#label} should be a type of number',
+    'number.min': '{#label} should have a minimum value of {#limit}',
+    'any.only': '{#label} must be one of {#valids}',
+    'date.isoDate': '{#label} must be a valid ISO date'
+};
+
+const codeSchema = Joi.string().trim().alphanum().min(4).max(10).label('Code').pattern(/^[A-Za-z]/).messages(customMessages);
+const nameSchema = Joi.string().trim().min(2).label('Name').messages(customMessages);
+const descriptionSchema = Joi.string().trim().min(10).label('Description').messages(customMessages);
+const categorySchema = Joi.string().trim().valid(...courseCategories).label('Category').messages(customMessages);
+const instructorSchema = Joi.number().integer().label('Instructor').messages(customMessages);
+const durationSchema = Joi.number().integer().min(1).label('Duration').messages(customMessages);
+const levelSchema = Joi.string().trim().valid("Beginner", "Intermediate", "Advanced").label('Level').messages(customMessages);
+const sectionsSchema = Joi.number().integer().min(1).label('Sections').messages(customMessages);
+const statusSchema = Joi.string().trim().valid("pending", "approved").label('Status').messages(customMessages);
 
 const createCourseSchema = Joi.object({
     name: nameSchema,
@@ -44,26 +58,20 @@ const updateCourseSchema = Joi.object({
 });
 
 exports.courseInfo = (req, res, next) => {
-    try {
-        const { error } = createCourseSchema.validate(req.body, { presence: 'required', abortEarly: true });
-        if(error)
-            throw error;
-        next();
-    } catch (error) {
+    const { error } = createCourseSchema.validate(req.body, { presence: 'required', abortEarly: true });
+    if (error) {
         console.log(error);
-        res.status(400).json({ error: error.details[0].message });
+        return res.status(400).json({ error: error.details[0].message });
     }
+    next();
 };
 
 exports.updateCourseInfo = (req, res, next) => {
-    try {
-        const { error, value } = updateCourseSchema.validate(req.body, { presence: 'optional', abortEarly: true });
-        if(error)
-            throw error;
-        req.validatedBody = value;
-        next();
-    } catch (error) {
+    const { error, value } = updateCourseSchema.validate(req.body, { presence: 'optional', abortEarly: true });
+    if (error) {
         console.log(error);
-        res.status(400).json({ error: error.details[0].message });
+        return res.status(400).json({ error: error.details[0].message });
     }
+    req.validatedBody = value;
+    next();
 };
